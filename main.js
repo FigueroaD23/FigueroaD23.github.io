@@ -26,11 +26,13 @@ const obtenerPokemones = async (url) => {
     
     const res = await fetch(url);
     const resultados = await res.json();
+    console.log(resultados)
     
-    for (let i = 0; i < resultados.results.length; i++) {
+    for (let i = 0; i<resultados.results.length; i++) {
       try {
         const pokemon = await fetch(resultados.results[i].url);
         const pokemonRes = await pokemon.json();
+        
 
         const poke_types = pokemonRes.types.map((type) => type.type.name);
         const type = Object.keys(coloresPorTipo).find(
@@ -48,18 +50,20 @@ const obtenerPokemones = async (url) => {
         };
         pokemones[pokemonObj.id] = { ...pokemonObj };
 
-      } catch (error) {}
+      } catch (err) {
+        alert("Error al comunicarse con la API" + err + err.statusText);        
+      }
     }    
     pintarPokemones(resultados);
     if (!res.ok) throw { status: res.status, statusText: res.statusText };
     
   } catch (err) {
-    console.error(err.statusText);
+    alert("Error al comunicarse con la API" + err + err.statusText);
   }
 };
 
 const pintarPokemones = (resultados)=>{ 
-    contenedorPrincipal.innerHTML = "";
+    contenedorPrincipal.innerHTML = `<img src="img/Spinner-1.4s-217px.svg" alt="">`;
     let anterior="";
     if(resultados.previous === null){
         anterior = "#";
@@ -85,7 +89,7 @@ const pintarPokemones = (resultados)=>{
         clone.querySelector('.name').textContent = poke.nombre;
         clone.querySelector('.pokemon').style.backgroundColor = poke.color;
         clone.querySelector('.tipo').textContent = poke.tipo;
-        clone.querySelector('.type').innerHTML = `<b>Ataques:</b><br> ${poke.ataques[0].move.name} y ${poke.ataques[1].move.name}`;
+        clone.querySelector('.type').innerHTML = `<b>Ataque:</b><br> ${poke.ataques[0].move.name}`;
 
 
               
@@ -95,7 +99,7 @@ const pintarPokemones = (resultados)=>{
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  obtenerPokemones("https://pokeapi.co/api/v2/pokemon?limit=25&offset=0/");
+  obtenerPokemones("https://pokeapi.co/api/v2/pokemon?limit=20&offset=0");
 });
 
 
@@ -106,7 +110,9 @@ contenedorPrincipal.addEventListener("click",(e)=>{
         if(e.target.getAttribute("href") != "#"){
             obtenerPokemones(e.target.getAttribute("href"));        
             console.log(e.target.getAttribute("href"))      
-        }                     
+        }else{
+        alert("No hay página anterior");
+        }           
     }
     if(e.target.classList.contains("siguiente")){        
         e.preventDefault();        
@@ -115,3 +121,50 @@ contenedorPrincipal.addEventListener("click",(e)=>{
     }
     e.stopPropagation();
 })
+
+const filtroboton = document.querySelector("#filtroboton");
+const filtroInput = document.querySelector("#filtroInput");
+const filtro = document.querySelector("#filtro");
+
+const pokemonesFiltro = async (url)=>{    
+    try {
+        pokemones = {};
+        const pokemon = await fetch(url);
+        const pokemonRes = await pokemon.json();
+        
+
+        const poke_types = pokemonRes.types.map((type) => type.type.name);
+        const type = Object.keys(coloresPorTipo).find(
+          (type) => poke_types.indexOf(type) > -1
+        );
+        const color = coloresPorTipo[type];
+        if (!pokemon.ok) throw { status: pokemon.status, statusText: pokemon.statusText }; 
+        const pokemonObj = {
+          img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonRes.id}.png`,
+          nombre: pokemonRes.name[0].toUpperCase() + pokemonRes.name.slice(1),
+          id: pokemonRes.id,
+          ataques: pokemonRes.moves,
+          color: coloresPorTipo[type],
+          tipo: type          
+        };
+        pokemones[pokemonObj.id] = { ...pokemonObj };
+        let arreglo = {previous:"https://pokeapi.co/api/v2/pokemon?limit=20&offset=0",
+    next:"https://pokeapi.co/api/v2/pokemon?limit=20&offset=0"};    
+        pintarPokemones(arreglo);
+
+      } catch (err) {
+        alert("Error al comunicarse con la API, pokemon no encontrado");
+      }      
+}
+
+filtroboton.addEventListener("click",(e)=>{
+    e.preventDefault();
+    if(filtroInput.value != "" && (filtro.selectedIndex === 0 || filtro.selectedIndex === 1)){
+        console.log(filtro.selectedIndex)
+        console.log("FILTRO")
+        pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`);
+        //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
+    }else{
+        alert("pokemon no encontrado, por favor busca otro");
+    }
+});
