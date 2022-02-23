@@ -159,12 +159,17 @@ const pokemonesFiltro = async (url)=>{
 
 filtroboton.addEventListener("click",(e)=>{
     e.preventDefault();
-    if(filtroInput.value != "" && (filtro.selectedIndex === 0 || filtro.selectedIndex === 1)){
-        console.log(filtro.selectedIndex)
-        console.log("FILTRO")
+    if(filtroInput.value != "" && filtro.selectedIndex === 1 && !isNaN(filtroInput.value)){                
         pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`);
         //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
+    }else if(filtroInput.value != "" && filtro.selectedIndex === 0 && isNaN(filtroInput.value)){                
+      console.log(filtroInput.value.toLowerCase())
+      pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value.toLowerCase()}`);
+      //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
     }else{
-        alert("pokemon no encontrado, por favor busca otro");
+      filtro.selectedIndex === 0 ?
+      alert("pokemon no encontrado, solo puedes introducir nombre (se busca por nombre)"):
+      alert("pokemon no encontrado, solo puedes introducir numero (se busca por id)");
     }
+    
 });
