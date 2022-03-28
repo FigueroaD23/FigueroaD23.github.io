@@ -15,62 +15,59 @@ const coloresPorTipo = {
   fighting: "#E6E0D4",
   normal: "#F5F5F5",
 };
-const fragment  = document.createDocumentFragment();
+const fragment = document.createDocumentFragment();
 let pokemones = {};
 const pokemonTemplate = document.querySelector("#pokemonTemplate").content;
 let urls = [];
 const obtenerPokemones = async (url) => {
-    contenedorPrincipal.innerHTML = `<img src="img/Spinner-1.4s-217px.svg" alt="">`;
-    pokemones = {}
+  contenedorPrincipal.innerHTML = `<img src="img/Spinner-1.4s-217px.svg" alt="">`;
+  pokemones = {};
   try {
-    
     const res = await fetch(url);
     const resultados = await res.json();
-    console.log(resultados)
-    
-    for (let i = 0; i<resultados.results.length; i++) {
+    console.log(resultados);
+
+    for (let i = 0; i < resultados.results.length; i++) {
       try {
         const pokemon = await fetch(resultados.results[i].url);
         const pokemonRes = await pokemon.json();
-        
 
         const poke_types = pokemonRes.types.map((type) => type.type.name);
         const type = Object.keys(coloresPorTipo).find(
           (type) => poke_types.indexOf(type) > -1
         );
         const color = coloresPorTipo[type];
-        if (!pokemon.ok) throw { status: pokemon.status, statusText: pokemon.statusText }; 
+        if (!pokemon.ok)
+          throw { status: pokemon.status, statusText: pokemon.statusText };
         const pokemonObj = {
           img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonRes.id}.png`,
           nombre: pokemonRes.name[0].toUpperCase() + pokemonRes.name.slice(1),
           id: pokemonRes.id,
           ataques: pokemonRes.moves,
           color: coloresPorTipo[type],
-          tipo: type          
+          tipo: type,
         };
         pokemones[pokemonObj.id] = { ...pokemonObj };
-
       } catch (err) {
-        alert("Error al comunicarse con la API" + err + err.statusText);        
+        alert("Error al comunicarse con la API" + err + err.statusText);
       }
-    }    
+    }
     pintarPokemones(resultados);
     if (!res.ok) throw { status: res.status, statusText: res.statusText };
-    
   } catch (err) {
     alert("Error al comunicarse con la API" + err + err.statusText);
   }
 };
 
-const pintarPokemones = (resultados)=>{ 
-    contenedorPrincipal.innerHTML = `<img src="img/Spinner-1.4s-217px.svg" alt="">`;
-    let anterior="";
-    if(resultados.previous === null){
-        anterior = "#";
-    }  else{
-        anterior = resultados.previous;
-    }
-    contenedorPrincipal.innerHTML=`
+const pintarPokemones = (resultados) => {
+  contenedorPrincipal.innerHTML = `<img src="img/Spinner-1.4s-217px.svg" alt="">`;
+  let anterior = "";
+  if (resultados.previous === null) {
+    anterior = "#";
+  } else {
+    anterior = resultados.previous;
+  }
+  contenedorPrincipal.innerHTML = `
     <div class="links">
             <ul class="pagination d-flex justify-content-between">
                 <li class="page-item">
@@ -82,94 +79,120 @@ const pintarPokemones = (resultados)=>{
             </ul>
     </div>
         `;
-    Object.values(pokemones).forEach((poke,i)=>{
-        const clone = pokemonTemplate.cloneNode(true);
-        clone.querySelector('.img-container img').setAttribute("src", poke.img);
-        clone.querySelector('.number').textContent = poke.id.toString().padStart(3, '0');
-        clone.querySelector('.name').textContent = poke.nombre;
-        clone.querySelector('.pokemon').style.backgroundColor = poke.color;
-        clone.querySelector('.tipo').textContent = poke.tipo;
-        clone.querySelector('.type').innerHTML = `<b>Ataque:</b><br> ${poke.ataques[0].move.name}`;
+  Object.values(pokemones).forEach((poke, i) => {
+    const clone = pokemonTemplate.cloneNode(true);
+    clone.querySelector(".img-container img").setAttribute("src", poke.img);
+    clone.querySelector(".number").textContent = poke.id
+      .toString()
+      .padStart(3, "0");
+    clone.querySelector(".number").dataset.numeroPokemon = poke.id;
+    clone.querySelector(".name").textContent = poke.nombre;
+    clone.querySelector(".pokemon").style.backgroundColor = poke.color;
+    clone.querySelector(".tipo").textContent = poke.tipo;
+    clone.querySelector(
+      ".type"
+    ).innerHTML = `<b>Ataque:</b><br> ${poke.ataques[0].move.name}`;
 
-
-              
-        fragment.appendChild(clone);
-    });    
-    contenedorPrincipal.appendChild(fragment);  
-}
+    fragment.appendChild(clone);
+  });
+  contenedorPrincipal.appendChild(fragment);
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   obtenerPokemones("https://pokeapi.co/api/v2/pokemon?limit=20&offset=0");
 });
 
+contenedorPrincipal.addEventListener("click", (e) => {
+  if (e.target.classList.contains("anterior")) {
+    e.preventDefault();
+    console.log(e.target.getAttribute("href"));
+    if (e.target.getAttribute("href") != "#") {
+      obtenerPokemones(e.target.getAttribute("href"));
+      console.log(e.target.getAttribute("href"));
+    } else {
+      alert("No hay página anterior");
+    }
+  }
+  if (e.target.classList.contains("siguiente")) {
+    e.preventDefault();
+    obtenerPokemones(e.target.getAttribute("href"));
+    console.log(e.target.getAttribute("href"));
+  }
+  if (e.target.classList.contains("imagen-pokemon") || e.target.classList.contains("img-container")) {
+    document.querySelector(".modalPokemones").classList.add("modalPokeActive")
+    //console.log(e.target.parentElement.parentElement.querySelector(".number").dataset.numeroPokemon)
+    let idPokemon = e.target.parentElement.parentElement.querySelector(".number").dataset.numeroPokemon;
+    pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${idPokemon}`);
+  }
+  e.stopPropagation();
+});
 
-contenedorPrincipal.addEventListener("click",(e)=>{
-    if(e.target.classList.contains("anterior")){   
-        e.preventDefault();
-        console.log(e.target.getAttribute("href"))      
-        if(e.target.getAttribute("href") != "#"){
-            obtenerPokemones(e.target.getAttribute("href"));        
-            console.log(e.target.getAttribute("href"))      
-        }else{
-        alert("No hay página anterior");
-        }           
-    }
-    if(e.target.classList.contains("siguiente")){        
-        e.preventDefault();        
-        obtenerPokemones(e.target.getAttribute("href"));  
-        console.log(e.target.getAttribute("href"))      
-    }
-    e.stopPropagation();
-})
+document.querySelector(".cerrar").addEventListener("click",()=>{
+  document.querySelector(".modalPokemones").classList.remove("modalPokeActive")
+});
 
 const filtroboton = document.querySelector("#filtroboton");
 const filtroInput = document.querySelector("#filtroInput");
 const filtro = document.querySelector("#filtro");
 
-const pokemonesFiltro = async (url)=>{    
-    try {
-        pokemones = {};
-        const pokemon = await fetch(url);
-        const pokemonRes = await pokemon.json();
-        
+const pokemonesFiltro = async (url) => {
+  try {
+    pokemones = {};
+    const pokemon = await fetch(url);
+    const pokemonRes = await pokemon.json();
 
-        const poke_types = pokemonRes.types.map((type) => type.type.name);
-        const type = Object.keys(coloresPorTipo).find(
-          (type) => poke_types.indexOf(type) > -1
+    const poke_types = pokemonRes.types.map((type) => type.type.name);
+    const type = Object.keys(coloresPorTipo).find(
+      (type) => poke_types.indexOf(type) > -1
+    );
+    const color = coloresPorTipo[type];
+    if (!pokemon.ok)
+      throw { status: pokemon.status, statusText: pokemon.statusText };
+    const pokemonObj = {
+      img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonRes.id}.png`,
+      nombre: pokemonRes.name[0].toUpperCase() + pokemonRes.name.slice(1),
+      id: pokemonRes.id,
+      ataques: pokemonRes.moves,
+      color: coloresPorTipo[type],
+      tipo: type,
+    };
+    pokemones[pokemonObj.id] = { ...pokemonObj };
+    let arreglo = {
+      previous: "https://pokeapi.co/api/v2/pokemon?limit=20&offset=0",
+      next: "https://pokeapi.co/api/v2/pokemon?limit=20&offset=0",
+    };
+    pintarPokemones(arreglo);
+  } catch (err) {
+    alert("Error al comunicarse con la API, pokemon no encontrado");
+  }
+};
+
+filtroboton.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (
+    filtroInput.value != "" &&
+    filtro.selectedIndex === 1 &&
+    !isNaN(filtroInput.value)
+  ) {
+    pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`);
+    //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
+  } else if (
+    filtroInput.value != "" &&
+    filtro.selectedIndex === 0 &&
+    isNaN(filtroInput.value)
+  ) {
+    console.log(filtroInput.value.toLowerCase());
+    pokemonesFiltro(
+      `https://pokeapi.co/api/v2/pokemon/${filtroInput.value.toLowerCase()}`
+    );
+    //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
+  } else {
+    filtro.selectedIndex === 0
+      ? alert(
+          "pokemon no encontrado, solo puedes introducir nombre (se busca por nombre)"
+        )
+      : alert(
+          "pokemon no encontrado, solo puedes introducir numero (se busca por id)"
         );
-        const color = coloresPorTipo[type];
-        if (!pokemon.ok) throw { status: pokemon.status, statusText: pokemon.statusText }; 
-        const pokemonObj = {
-          img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonRes.id}.png`,
-          nombre: pokemonRes.name[0].toUpperCase() + pokemonRes.name.slice(1),
-          id: pokemonRes.id,
-          ataques: pokemonRes.moves,
-          color: coloresPorTipo[type],
-          tipo: type          
-        };
-        pokemones[pokemonObj.id] = { ...pokemonObj };
-        let arreglo = {previous:"https://pokeapi.co/api/v2/pokemon?limit=20&offset=0",
-    next:"https://pokeapi.co/api/v2/pokemon?limit=20&offset=0"};    
-        pintarPokemones(arreglo);
-
-      } catch (err) {
-        alert("Error al comunicarse con la API, pokemon no encontrado");
-      }      
-}
-
-filtroboton.addEventListener("click",(e)=>{
-    e.preventDefault();
-    if(filtroInput.value != "" && filtro.selectedIndex === 1 && !isNaN(filtroInput.value)){                
-        pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`);
-        //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
-    }else if(filtroInput.value != "" && filtro.selectedIndex === 0 && isNaN(filtroInput.value)){                
-      console.log(filtroInput.value.toLowerCase())
-      pokemonesFiltro(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value.toLowerCase()}`);
-      //console.log(`https://pokeapi.co/api/v2/pokemon/${filtroInput.value}`)
-    }else{
-      filtro.selectedIndex === 0 ?
-      alert("pokemon no encontrado, solo puedes introducir nombre (se busca por nombre)"):
-      alert("pokemon no encontrado, solo puedes introducir numero (se busca por id)");
-    }
-    
+  }
 });
